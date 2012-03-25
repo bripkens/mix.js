@@ -1,5 +1,5 @@
 describe('core', function () {
-  it('should list dependencies', function() {
+  it('should resolve dependencies', function() {
     var mix1 = mix(function() {});
     expect(mix1._meta.dependencies.length).toBe(0);
 
@@ -18,30 +18,59 @@ describe('core', function () {
     expect(mix4._meta.dependencies[1]).toBe(mix2);
   });
 
-  it('should allow access to other mixin methods', function() {
+  it('should allow access to overridden methods', function() {
     var mix1 = mix(function() {
       return {
-        printFoo: function() {
-          console.log('Foo')
+        getMessage: function() {
+          return 'Foo';
         }
       };
     });
 
     var mix2 = mix(mix1, function() {
       return {
-        printFoo: function() {
-          this._getMixinMethods(mix1).printFoo();
-          console.log('Bar!');
+        getMessage: function() {
+          return this._getMixinMethods(mix1).getMessage() + 'Bar';
         }
       };
     });
 
-    //new mix1().printFoo();
-    //console.log(new mix1());
-    //console.log(new mix1())
-    //console.log(new mix2());
-    console.log(mix1);
-    console.log(new mix2());
-    new mix2().printFoo();
+    expect(new mix2().getMessage()).toEqual('FooBar');
+  });
+
+  it('should allow private variables', function() {
+    var Counter = mix(function() {
+      var counter = 0;
+
+      return {
+        getCallCount: function() {
+          return ++counter;
+        }
+      };
+    });
+
+    var first = new Counter(),
+        second = new Counter();
+
+    expect(first.getCallCount()).toBe(1);
+    expect(first.getCallCount()).toBe(2);
+    expect(second.getCallCount()).toBe(1);
+    expect(first.getCallCount()).toBe(3);
+  });
+
+  it('should provide constructors', function() {
+    var Counter = mix(function(initialCount) {
+      var counter = initialCount;
+
+      return {
+        getCallCount: function() {
+          return ++counter;
+        }
+      };
+    });
+
+    var initialCount = 5;
+    var counter = new Counter(initialCount);
+    expect(counter.getCallCount()).toBe(initialCount + 1);
   });
 });

@@ -1,7 +1,5 @@
-(function() {
+(function(context) {
   "use strict";
-
-  var root = this;
 
   var slice = Array.prototype.slice;
 
@@ -76,5 +74,14 @@
     return constructor;
   };
 
-  root.mix = mix;
-}).call(this);
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = mix;
+  } else {
+    var previousMix = context.mix;
+    context.mix = mix;
+    mix.noConflict = function() {
+      context.mix = previousMix;
+    };
+  }
+})(this);
