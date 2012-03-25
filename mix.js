@@ -1,5 +1,5 @@
 /* 
- * mix.js 0.5
+ * mix.js 1.0
  *
  * Copyright (c) 2012, Ben Ripkens
  * Licensed under MIT license.
