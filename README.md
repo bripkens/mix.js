@@ -4,7 +4,8 @@ mix.js is a tiny library to enable simple mixins and mixin dependency resolution
 in JavaScript. It focuses on unobtrusive and strong usage of mixins. It
 originated in the [biographer project](http://code.google.com/p/biographer/)
 which requires many mixins with common dependencies, i.e., mixins which can be
-mixed and whose commonalities are taken into account at mixin generation time.
+mixed and whose commonalities are taken into account at mixin generation time
+(not object instantiation time).
 
 # Terminology
 
@@ -115,6 +116,7 @@ instance.render();
 
 
 # License (MIT)
+Copyright (c) 2012 Ben Ripkens
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
