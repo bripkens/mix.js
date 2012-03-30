@@ -1,9 +1,29 @@
 # mix.js
 
 mix.js is a tiny library to enable simple mixins and mixin dependency resolution
-in JavaScript.
+in JavaScript. It focuses on unobtrusive and strong usage of mixins. It
+originated in the [biographer project](http://code.google.com/p/biographer/)
+which requires many mixins with common dependencies, i.e., mixins which can be
+mixed and whose commonalities are taken into account at mixin generation time.
 
-## Example
+# Terminology
+
+**Class**: JavaScript "class" as seen on the
+[Mozilla Developer Network](https://developer.mozilla.org/en/JavaScript/Reference/Operators/new).
+
+**Mixin**: A mix of one or more classes.
+
+
+# Project goals
+
+ - Support for mixins in mixins, i.e., don't worry about mixin dependencies.
+ - Private properties to avoid name clashes (without closures).
+ - Possibility to call either functions as exposed through the object's public
+   API, class methods and methods exposed by other classes that are part of the
+   mixin.
+ - Fast object instantiation.
+
+# Example
 
 ``` javascript
 /*
@@ -81,7 +101,7 @@ var instance = new RectangleWithLabel(args);
 instance.render();
 
 /*
- * Result (in document body):
+ * Result (in document body - fu GitHub, y u make this italic?):
  * 42 is the answer to your questions.
  * ┏━━━━━━━━━━━━━━━┓
  * ┃               ┃
@@ -92,3 +112,27 @@ instance.render();
  */
 
 ```
+
+
+# License (MIT)
+
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
