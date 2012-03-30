@@ -7,7 +7,7 @@ in JavaScript.
 
 ``` javascript
 /*
- * We define a standard JavaScript "class" Label. It works just like you are
+ * We define a standard JavaScript "class" *Label*. It works just like you are
  * used to and the constructor can accept parameters through the *args*
  * parameter. Don't worry, mix.js makes sure that you are always getting
  * something as a parameter (at worst, you get an Object without
@@ -79,5 +79,16 @@ var args = {
  */
 var instance = new RectangleWithLabel(args);
 instance.render();
+
+/*
+ * Result (in document body):
+ * 42 is the answer to your questions.
+ * ┏━━━━━━━━━━━━━━━┓
+ * ┃               ┃
+ * ┃               ┃
+ * ┃               ┃
+ * ┃               ┃
+ * ┗━━━━━━━━━━━━━━━┛
+ */
 
 ```
