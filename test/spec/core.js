@@ -1,76 +1,72 @@
 describe('core', function () {
   it('should resolve dependencies', function() {
-    var mix1 = mix(function() {});
-    expect(mix1._meta.dependencies.length).toBe(0);
+    var baseInstantiationCount = 0;
 
-    var mix2 = mix(mix1, function() {});
-    expect(mix2._meta.dependencies.length).toBe(1);
-    expect(mix2._meta.dependencies[0]).toBe(mix1);
+    var Base = function() {
+      baseInstantiationCount++;
+    };
 
-    var mix3 = mix(mix2, function() {});
-    expect(mix3._meta.dependencies.length).toBe(2);
-    expect(mix3._meta.dependencies[0]).toBe(mix1);
-    expect(mix3._meta.dependencies[1]).toBe(mix2);
+    var RectangleConstructor = function() {};
+    var Rectangle = mix(Base, RectangleConstructor);
 
-    var mix4 = mix(mix2, mix1, function() {});
-    expect(mix4._meta.dependencies.length).toBe(2);
-    expect(mix4._meta.dependencies[0]).toBe(mix1);
-    expect(mix4._meta.dependencies[1]).toBe(mix2);
+    var LabelConstuctor = function() {};
+    var Label = mix(Base, LabelConstuctor);
+
+    var RectLabel = mix(Label, Rectangle);
+    new RectLabel();
+
+    expect(baseInstantiationCount).toBe(1);
   });
 
   it('should allow access to overridden methods', function() {
-    var mix1 = mix(function() {
-      return {
-        getMessage: function() {
-          return 'Foo';
-        }
-      };
-    });
+    var rectangleRenderCallCount = 0;
+    var Rectangle = function() {};
+    Rectangle.prototype.render = function() {
+      rectangleRenderCallCount++;
+    };
 
-    var mix2 = mix(mix1, function() {
-      return {
-        getMessage: function() {
-          return this._getMixinMethods(mix1).getMessage() + 'Bar';
-        }
-      };
-    });
+    var labelRenderCallCount = 0;
+    var LabelConstuctor = function() {};
+    LabelConstuctor.prototype.render = function() {
+      expect(rectangleRenderCallCount).toBe(0);
+      this._instances[Rectangle._id].render();
+      expect(rectangleRenderCallCount).toBe(1);
+      labelRenderCallCount++;
+    };
+    var RectLabel = mix(Rectangle, LabelConstuctor);
 
-    expect(new mix2().getMessage()).toEqual('FooBar');
+    new RectLabel().render();
+
+    expect(labelRenderCallCount).toBe(1);
+    
   });
 
   it('should allow private variables', function() {
-    var Counter = mix(function() {
-      var counter = 0;
+    var rectValue = 42;
+    var Rectangle = function(args) {
+      this._val = args.rectValue;
+    };
+    Rectangle.prototype.getRectangleValue = function() {
+      return this._val;
+    };
 
-      return {
-        getCallCount: function() {
-          return ++counter;
-        }
-      };
+    var labelValue = 43;
+    var LabelConstuctor = function(args) {
+      this._val = args.labelValue;
+    };
+    LabelConstuctor.prototype.getLabelValue = function() {
+      return this._val;
+    };
+
+
+    var RectLabel = mix(Rectangle, LabelConstuctor);
+
+    var instance = new RectLabel({
+      rectValue: rectValue,
+      labelValue: labelValue
     });
 
-    var first = new Counter(),
-        second = new Counter();
-
-    expect(first.getCallCount()).toBe(1);
-    expect(first.getCallCount()).toBe(2);
-    expect(second.getCallCount()).toBe(1);
-    expect(first.getCallCount()).toBe(3);
-  });
-
-  it('should provide constructors', function() {
-    var Counter = mix(function(initialCount) {
-      var counter = initialCount;
-
-      return {
-        getCallCount: function() {
-          return ++counter;
-        }
-      };
-    });
-
-    var initialCount = 5;
-    var counter = new Counter(initialCount);
-    expect(counter.getCallCount()).toBe(initialCount + 1);
+    expect(instance.getRectangleValue()).toBe(rectValue);
+    expect(instance.getLabelValue()).toBe(labelValue);
   });
 });

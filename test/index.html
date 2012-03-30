@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+
+<body>
+
+  <script src="../mix.js" type="text/javascript"></script>
+
+  <script type="text/javascript">
+    var Observable = function() {
+      console.log('Observable instantiated');
+    };
+    Observable.prototype.trigger = function() {
+      console.log('Triggering with', arguments)
+    };
+
+
+
+
+
+
+
+
+
+    var LabelProto = function(args) {
+      this._text = args.text || '';
+      this._canvas = args.canvas;
+    };
+    LabelProto.prototype.render = function() {
+      this._pub.trigger('LabelProto render method got called');
+      this._canvas.appendChild(document.createTextNode(this._text));
+    };
+    var Label = mix(Observable, LabelProto);
+
+
+
+
+
+
+
+
+    var RectangleProto = function(args) {
+      this._canvas = args.canvas;
+    };
+    RectangleProto.prototype.render = function() {
+      this._pub.trigger('RectangleProto render method got called.');
+      var element = document.createElement('div');
+      element.style.border = '1px solid black';
+      element.style.width = '100px';
+      element.style.height = '100px';
+
+      this._canvas.appendChild(element);
+    }; 
+    var Rectangle = mix(Observable, RectangleProto);
+
+
+
+
+
+    var RecLabelProto = function() {
+    };
+    RecLabelProto.prototype.render = function() {
+      this._instances[Label._id].render();
+      this._instances[Rectangle._id].render();
+    };
+    var RecLabel = mix(Label, Rectangle, RecLabelProto);
+
+
+    
+    new RecLabel({canvas: document.body, text: 'Foobar!'}).render();
+  </script>
+</body>
+</html>

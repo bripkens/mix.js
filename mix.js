@@ -1,5 +1,5 @@
 /* 
- * mix.js 1.0
+ * mix.js 1.1
  *
  * Copyright (c) 2012, Ben Ripkens
  * Licensed under MIT license.
@@ -11,86 +11,112 @@
 (function(context) {
   "use strict";
 
-  var slice = Array.prototype.slice;
+  var classIdCounter = 0;
+  var addClassIdIfAbsent = function(clazz) {
+    if (typeof clazz._id === 'undefined') {
+      clazz._id = classIdCounter++;
+    }
+  };
+
+  var addDependencyIfAbsent = function(dependencyList, lookupList, dependency) {
+    var dependencyId = dependency._id;
+    if (lookupList.indexOf(dependencyId) === -1) {
+      dependencyList.push(dependency);
+      lookupList.push(dependencyId);
+    }
+  };
 
   var dependencyResolution = function(declaredDependencies) {
-    var realDependencies = [];
+    var realDependencies = [],
+        // used to improve speed. Functions comparisons are *SLOW*.
+        // http://jsperf.com/javascript-functions-as-object-keys
+        depedencyLookup = [];
 
     for (var i = 0; i < declaredDependencies.length; i++) {
-      var declaredDependency = declaredDependencies[i];
+      var declaredDependency = declaredDependencies[i],
+          meta = declaredDependency._meta;
 
-      // dependency not analysed
-      if (realDependencies.indexOf(declaredDependency) === -1) {
-        var transitiveDependencies = declaredDependency._meta.dependencies;
+      if (typeof meta === 'undefined') {
+        // Not a mixin, but a plain JavaScript "class"
 
+        addClassIdIfAbsent(declaredDependency);
+
+        addDependencyIfAbsent(realDependencies,
+            depedencyLookup,
+            declaredDependency);
+      } else {
+        // mixin in a mixin - mixception! Make sure that we untangle all
+        // transitive dependencies before we continue. At this point, we can
+        // be sure that every dependency has an Id, because it needs to be
+        // a direct dependency (for some mixin), before it can become a
+        // transitive.
+        var transitiveDependencies = meta.classes;
         for (var j = 0; j < transitiveDependencies.length; j++) {
-          var transitiveDependency = transitiveDependencies[j];
-
-          if (realDependencies.indexOf(transitiveDependency) === -1) {
-            realDependencies.push(transitiveDependency);
-          }
+          addDependencyIfAbsent(realDependencies,
+              depedencyLookup,
+              transitiveDependencies[j]);
         }
-
-        realDependencies.push(declaredDependency);
       }
     }
 
     return realDependencies;
   };
 
+  var getPublicPropertyProviders = function(classes) {
+    var publicProperties = {};
 
-  var extend = function(from, to) {
-    for (var key in from) {
-      if (from.hasOwnProperty(key)) {
-        to[key] = from[key];
+    for (var i = 0; i < classes.length; i++) {
+      var clazz = classes[i],
+          proto = clazz.prototype;
+
+      for (var propName in proto) {
+        if (proto.hasOwnProperty(propName) && propName.charAt(0) !== '_') {
+          // public property "propName" will be provided through "clazz"
+          publicProperties[propName] = clazz;
+        }
       }
     }
+
+    return publicProperties;
   };
 
-  /*
-   * Execute the *constructor* with context *obj*. The arguments *args*
-   * are passed to it. Should the constructor expose public functions,
-   * then those functions are added to *obj* and *obj._mixinMethods*
-   * (just in case they are overridden by one of the following mixins).
-   */
-  var applyConstructor = function(obj, constructor, args) {
-    var methods = constructor.apply(obj, args);
-
-    if (methods !== undefined) {
-      extend(methods, obj);
-      extend(methods, obj._mixinMethods[constructor] = {});
-    }
-  };
-
-  /*
-   * Core
-   * ----
-   */
   var mix = function() {
-    var dependencies = slice.call(arguments, 0, arguments.length-1),
-        newMixConstructor = arguments[arguments.length-1];
+    var classes = dependencyResolution(arguments),
+        publicProperties = getPublicPropertyProviders(classes);
 
-    var meta = {
-      dependencies: dependencyResolution(dependencies),
-      constructor: newMixConstructor
-    };
+    var constructor = function(args) {
+      args = args || {};
+      var instances = {};
+      args.pub = this;
+      args.instances = instances;
 
-    var constructor = function() {
-      this._mixinMethods = {};
-
-      for (var i = 0; i < dependencies.length; i++) {
-        var depConstructor = dependencies[i]._meta.constructor;
-        applyConstructor(this, depConstructor, arguments);
+      // instantiate every class and register it under *instances*
+      for (var i = 0; i < classes.length; i++) {
+        var clazz = classes[i];
+        var instance = new clazz(args);
+        instance._pub = this;
+        instance._instances = instances;
+        instances[clazz._id] = instance;
       }
 
-      this._getMixinMethods = function(mixin) {
-        return this._mixinMethods[mixin._meta.constructor];
-      };
+      // Add public properties and functions to the object's public API.
+      // This mechanism leverages the *publicProperties* object which is
+      // created at mixin creation time, i.e., only once when mix(...) is
+      // called.
+      for (var propName in publicProperties) {
+        var clazz = publicProperties[propName];
+        var instance = instances[clazz._id];
 
-      applyConstructor(this, newMixConstructor, arguments);
+        (function(obj, propName, instance) {
+          obj[propName] = function() {
+            return instance[propName].apply(instance, arguments);
+          };
+        })(this, propName, instance);
+      }
     };
 
-    constructor._meta = meta;
+    constructor._meta = {classes: classes};
+    constructor._id = classes[classes.length - 1]._id;
 
     return constructor;
   };
