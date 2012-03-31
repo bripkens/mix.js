@@ -87,8 +87,9 @@
     var constructor = function(args) {
       args = args || {};
       var instances = {};
-      args.pub = this;
+      this._instances = instances;
       args.instances = instances;
+      args.pub = this;
 
       // instantiate every class and register it under *instances*
       for (var i = 0; i < classes.length; i++) {
@@ -98,22 +99,19 @@
         instance._instances = instances;
         instances[clazz._id] = instance;
       }
-
-      // Add public properties and functions to the object's public API.
-      // This mechanism leverages the *publicProperties* object which is
-      // created at mixin creation time, i.e., only once when mix(...) is
-      // called.
-      for (var propName in publicProperties) {
-        var clazz = publicProperties[propName];
-        var instance = instances[clazz._id];
-
-        (function(obj, propName, instance) {
-          obj[propName] = function() {
-            return instance[propName].apply(instance, arguments);
-          };
-        })(this, propName, instance);
-      }
     };
+
+    // Add public properties and functions to the object's public API.
+    for (var propName in publicProperties) {
+      var clazz = publicProperties[propName];
+
+      constructor.prototype[propName] = (function(propName, clazz) {
+        return function() {
+          var instance = this._instances[clazz._id];
+          return instance[propName].apply(instance, arguments);
+        };
+      })(propName, clazz);
+    }
 
     constructor._meta = {classes: classes};
     constructor._id = classes[classes.length - 1]._id;
