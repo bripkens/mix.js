@@ -122,22 +122,27 @@
   /*
    * Exporting the public API
    * ------------------------
-   * In a browser, the library will be available through this.mix.
+   * In a browser, the library will be available through this.mix. Should
+   * requireJS be used, we register mix.js through requireJS.
    * For other environments, CommonJS is supported.
    */
-  if (typeof module !== "undefined" && module.exports) {
+  if (typeof module !== 'undefined' && module.exports) {
     module.exports = mix;
+  } else if (typeof define !== 'undefined') {
+    define(function() {
+      return mix;
+    });
   } else {
-    var previousMix = context.mix;
-    context.mix = mix;
-
     /*
      * In case the global variable mix needs to be reset to its previous value.
      * The mix library is returned by this method.
      */
+    var previousMix = context.mix;
     mix.noConflict = function() {
       context.mix = previousMix;
       return mix;
     };
+
+    context.mix = mix;
   }
 })(this);
